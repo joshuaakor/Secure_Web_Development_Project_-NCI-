@@ -2,7 +2,6 @@ from flask import Flask, request, render_template_string, session, redirect, url
 import sqlite3
 import os
 import re
-
 app = Flask(__name__)
 app.secret_key = 'secure_secret_key_@%*45!!8120**&'
 
@@ -11,7 +10,7 @@ LOGIN_TEMPLATE = '''
 <!DOCTYPE html>
 <htm l>
 <head>
-    <title>Login - BrainBox Stationery (Vulnerable Version)</title>
+    <title>Login - BrainBox Stationery (Secure Version)</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
         .error { color: red; margin: 10px 0; }
@@ -20,7 +19,7 @@ LOGIN_TEMPLATE = '''
     </style>
 </head>
 <body>
-    <h1>BrainBox Stationery (Vulnerable Version)</h1>
+    <h1>BrainBox Stationery (Secure Version)</h1>
     <form method="POST">
         <input type="text" name="username" placeholder="Username" required>
         <input type="password" name="password" placeholder="Password" required>
@@ -177,7 +176,7 @@ def login():
         cursor = conn.cursor()
 
         try:
-            cursor.execute(query)
+            cursor.execute(query, (username, password))
             user = cursor.fetchone()
 
             if user:
@@ -192,7 +191,8 @@ def login():
 
         except Exception as e:
             conn.close()
-            return render_template_string(LOGIN_TEMPLATE, error=f"Database error: {str(e)}")
+            # Error logged internally, generic message shown to user
+            return render_template_string(LOGIN_TEMPLATE, error="An error occurred. Please try again.")
     
     return render_template_string(LOGIN_TEMPLATE)
  
