@@ -258,29 +258,34 @@ def admin_search():
     user_query = request.form['user_query']
     results = ""
 
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
+    #Secure Input Validation
+    if not is_input_valid(user_query):
+        results = "Invalid characters in input!"
+    else:
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
 
-    # VULNERABLE: SQL Injection in admin search
-
-    admin_query = f"SELECT * FROM users WHERE username LIKE '%{user_query}%' OR email LIKE '%{user_query}%'" ##### VULNERABLE change to ?
+# Secure Query using parameterized statements
+    admin_query = "SELECT * FROM users WHERE username LIKE ? OR email LIKE ?"
+    search_param = f"%{user_query}%"
 
     try:
-        cursor.execute(admin_query)
+        cursor.execute(admin_query, (search_param, search_param))
         users = cursor.fetchall()
 
         if users:
             results = "User Lookup Results:\n"
             for user in users:
+                # Display user info excluding password
                 results += f"ID: {user[0]}, Username: {user[1]}, Email: {user[3]}, Admin: {user[4]}\n"
 
         else:
             results = "No users found."
 
     except Exception as e:
-        results = f"Error: {str(e)}"
+        results = "An error occurred during user lookup."
 
-    conn.close()
+        conn.close()
 
     return render_template_string(
         DASHBOARD_TEMPLATE,
