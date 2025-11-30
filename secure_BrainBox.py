@@ -215,22 +215,29 @@ def search_products():
 
  query = request.args.get('query', '')
  products = []
-
- if query:
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-
-    # VULNERABLE: SQL Injection in search
+ search_error = None
  
-    search_query = f"SELECT * FROM products WHERE name LIKE '%{query}%' OR description LIKE '%{query}%'" ##### VULNERABLE change to ?
+ if query:
+    # Implement secure input validation
+    if not is_input_valid(query):
+        search_error = "Invalid characters in search query!"
+    else:
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+
+    # Implement parameterized query to prevent SQL injection
+ 
+    search_query = "SELECT * FROM products WHERE name LIKE ? OR description LIKE ?"
+    
+    search_param = f"%{query}%"
 
     try:
-        cursor.execute(search_query)
+        cursor.execute(search_query, (search_param, search_param))
         products = cursor.fetchall()
     except Exception as e:
-        products = []
+        search_error = "Search error occurred"
 
-    conn.close
+        conn.close
 
     return render_template_string(
         DASHBOARD_TEMPLATE,
@@ -238,7 +245,8 @@ def search_products():
         email=session['email'],
         is_admin=session['is_admin'],
         query=query,
-        products=products)
+        products=products,
+        search_error=search_error)
  
 
 
