@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string, session, redirect, url
 import sqlite3
 import os
 import re
+from contextlib import contextmanager
 app = Flask(__name__)
 app.secret_key = 'secure_secret_key_@%*45!!8120**&'
 
@@ -130,7 +131,7 @@ ADMIN_HTML = '''
                 <td>
                     <a href="/admin/edit-product/{{ p[0] }}">Edit</a> |
                     <a href="/admin/delete-product/{{ p[0] }}" style="color:red;" 
-                       onclick="return confirm('Delete this product?')">Delete</a>
+                    onclick="return confirm('Delete this product?')">Delete</a>
                 </td>
             </tr>
             {% else %}
@@ -302,6 +303,7 @@ def logout():
     return redirect('/login')   
 
 
+
 @app.route('/admin/products')
 def admin_products():
     if 'username' not in session or session['is_admin'] != 'Yes':
@@ -310,11 +312,8 @@ def admin_products():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
-    # Vulnerable but works: list all products
     cursor.execute("SELECT id, name, price, description FROM products")
     all_products = cursor.fetchall()
-
-    # HTML for admin product management (inline, vulnerable style)
     
 
     return render_template_string(
@@ -327,7 +326,7 @@ def admin_products():
         error=request.args.get('error')
     )
 
-# ==================== ADMIN CRUD FOR PRODUCTS (VULNERABLE VERSION) ====================
+
 # 2. Add new product (POST) - VULNERABLE TO SQL INJECTION
 @app.route('/admin/add-product', methods=['POST'])
 def admin_add_product():
@@ -341,17 +340,17 @@ def admin_add_product():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
-    # INTENTIONALLY VULNERABLE: Direct string interpolation
-    query = f"INSERT INTO products (name, price, description) VALUES ('{name}', {price}, '{description}')"
+    # Parameterized query to prevent SQL injection
+    query = f"INSERT INTO products (name, price, description) VALUES (?, ?, ?)"
 
     try:
-        cursor.execute(query)
+        cursor.execute(query, (name, price, description))
         conn.commit()
         conn.close()
         return redirect('/admin/products?message=Product+added+successfully')
     except Exception as e:
         conn.close()
-        return redirect(f'/admin/products?error=Error: {str(e)}')
+        return redirect('/admin/products?error=Failed+to+add+product') # Generic error message instead of detailed error
 
 
 # 3. Edit product form (GET)
