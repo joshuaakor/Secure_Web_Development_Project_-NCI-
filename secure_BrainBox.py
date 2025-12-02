@@ -327,7 +327,7 @@ def admin_products():
     )
 
 
-# 2. Add new product (POST) - VULNERABLE TO SQL INJECTION
+# 2. Add new product (POST) - Secure against SQL INJECTION
 @app.route('/admin/add-product', methods=['POST'])
 def admin_add_product():
     if 'username' not in session or session['is_admin'] != 'Yes':
@@ -408,20 +408,20 @@ def admin_update_product(product_id):
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
-    # INTENTIONALLY VULNERABLE
-    query = f"UPDATE products SET name = '{name}', price = {price}, description = '{description}' WHERE id = {product_id}"
+    # Parameterized query to prevent SQL injection
+    query = f"UPDATE products SET name = ?, price = ?, description = ? WHERE id = ?"
 
     try:
-        cursor.execute(query)
+        cursor.execute(query, (name, price, description, product_id))
         conn.commit()
         conn.close()
         return redirect('/admin/products?message=Product+updated+successfully')
     except Exception as e:
         conn.close()
-        return redirect(f'/admin/products?error=Update+failed: {str(e)}')
+        # Generic error message instead of detailed error
+        return redirect(f'/admin/products?error=Update+failed')
 
 
-# 5. Delete product - VULNERABLE TO SQL INJECTION via URL
 @app.route('/admin/delete-product/<int:product_id>')
 def admin_delete_product(product_id):
     if 'username' not in session or session['is_admin'] != 'Yes':
@@ -430,7 +430,6 @@ def admin_delete_product(product_id):
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
-    # INTENTIONALLY VULNERABLE: No sanitization of product_id
     cursor.execute(f"DELETE FROM products WHERE id = {product_id}")
     conn.commit()
     conn.close()
