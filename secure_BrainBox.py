@@ -442,7 +442,7 @@ if __name__ == '__main__':
  print("VULNERABLE APPLICATION STARTING")
  print("Access at: http://localhost:5001")
  print("Default credentials: admin/admin123")
- print("WARNING: This app contains intentional SQL Injection vulnerabilities")
+ print("NOTE: This app has been secured")
  app.run(debug=True, port=5001)
 
 
