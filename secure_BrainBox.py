@@ -217,6 +217,7 @@ def search_products():
  query = request.args.get('query', '')
  products = []
  search_error = None
+ conn = None
  
  if query:
     # Implement secure input validation
@@ -237,8 +238,9 @@ def search_products():
         products = cursor.fetchall()
     except Exception as e:
         search_error = "Search error occurred"
-
-        conn.close
+    finally:
+                if conn:
+                    conn.close()        
 
     return render_template_string(
         DASHBOARD_TEMPLATE,
